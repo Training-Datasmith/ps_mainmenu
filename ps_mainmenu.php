@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * 2007-2020 PrestaShop SA and Contributors
  *
@@ -36,9 +38,9 @@ class Ps_MainMenu extends Module implements WidgetInterface
     /**
      * @var string Name of the module running on PS 1.6.x. Used for data migration.
      */
-    const PS_16_EQUIVALENT_MODULE = 'blocktopmenu';
+    public const PS_16_EQUIVALENT_MODULE = 'blocktopmenu';
 
-    const MENU_JSON_CACHE_KEY = 'MOD_BLOCKTOPMENU_MENU_JSON';
+    public const MENU_JSON_CACHE_KEY = 'MOD_BLOCKTOPMENU_MENU_JSON';
 
     protected $_menu = '';
     protected $_html = '';
@@ -454,7 +456,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     }
                     break;
 
-                // Case to handle the option to show all Manufacturers
+                    // Case to handle the option to show all Manufacturers
                 case 'ALLMAN':
                     $html .= '<option selected="selected" value="ALLMAN0">' . $this->trans('All brands', [], 'Modules.Mainmenu.Admin') . '</option>' . PHP_EOL;
                     break;
@@ -466,7 +468,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     }
                     break;
 
-                // Case to handle the option to show all Suppliers
+                    // Case to handle the option to show all Suppliers
                 case 'ALLSUP':
                     $html .= '<option selected="selected" value="ALLSUP0">' . $this->trans('All suppliers', [], 'Modules.Mainmenu.Admin') . '</option>' . PHP_EOL;
                     break;
@@ -534,7 +536,8 @@ class Ps_MainMenu extends Module implements WidgetInterface
                 'label' => $page['meta_title'],
                 'url' => $this->context->link->getCMSLink(
                     new CMS($page['id_cms'], $id_lang),
-                    null, null,
+                    null,
+                    null,
                     $id_lang
                 ),
             ]);
@@ -605,7 +608,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     $root_node['children'][] = $this->generateCMSCategoriesMenu($id, $id_lang);
                     break;
 
-                // Case to handle the option to show all Manufacturers
+                    // Case to handle the option to show all Manufacturers
                 case 'ALLMAN':
                     $children = array_map(function (array $manufacturer) use ($id_lang) {
                         return $this->makeNode([
@@ -645,7 +648,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     }
                     break;
 
-                // Case to handle the option to show all Suppliers
+                    // Case to handle the option to show all Suppliers
                 case 'ALLSUP':
                     $children = array_map(function (array $supplier) use ($id_lang) {
                         return $this->makeNode([
@@ -1300,7 +1303,8 @@ class Ps_MainMenu extends Module implements WidgetInterface
             . (isset($groups) && Group::isFeatureActive() ? implode('', $groups) : ''));
 
         if (!Cache::isStored($cache_id)) {
-            $result = Db::getInstance()->executeS('
+            $result = Db::getInstance()->executeS(
+                '
 							SELECT c.*, cl.*
 				FROM `' . _DB_PREFIX_ . 'category` c
 				INNER JOIN `' . _DB_PREFIX_ . 'category_shop` category_shop ON (category_shop.`id_category` = c.`id_category` AND category_shop.`id_shop` = "' . (int) $shop_id . '")
