@@ -137,8 +137,7 @@ class Ps_MenuTopLinks
     {
         $result = true;
         $result &= Db::getInstance()->delete('linksmenutop', 'id_linksmenutop = ' . (int) $id_linksmenutop . ' AND id_shop = ' . (int) $id_shop);
-        $result &= Db::getInstance()->delete('linksmenutop_lang', 'id_linksmenutop = ' . (int) $id_linksmenutop);
 
-        return $result;
+        return $result & Db::getInstance()->delete('linksmenutop_lang', 'id_linksmenutop = ' . (int) $id_linksmenutop);
     }
 }

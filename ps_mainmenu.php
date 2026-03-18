@@ -29,7 +29,7 @@ if (!defined('_PS_VERSION_')) {
 
 use PrestaShop\PrestaShop\Core\Module\WidgetInterface;
 
-require dirname(__FILE__) . '/ps_menutoplinks.class.php';
+require __DIR__ . '/ps_menutoplinks.class.php';
 
 class Ps_MainMenu extends Module implements WidgetInterface
 {
@@ -214,8 +214,6 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $links_label = Tools::getValue('link') ? array_filter(Tools::getValue('link'), function ($value) {
             return (bool) strlen($value);
         }) : [];
-        $spacer = str_repeat('&nbsp;', $this->spacer_size);
-        $divLangName = 'link_label';
 
         $update_cache = false;
 
@@ -230,7 +228,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
 
                 if (count($shops) == 1) {
                     if (is_array($items) && count($items)) {
-                        $updated = Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', (string) implode(',', $items), false, (int) $shop_group_id, (int) $shop_id);
+                        $updated = Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', implode(',', $items), false, (int) $shop_group_id, (int) $shop_id);
                     } else {
                         $updated = Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', '', false, (int) $shop_group_id, (int) $shop_id);
                     }
@@ -253,7 +251,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
             if (Tools::isSubmit('submitBlocktopmenuLinks')) {
                 $errors_add_link = [];
 
-                foreach ($languages as $key => $val) {
+                foreach ($languages as $val) {
                     $links_label[$val['id_lang']] = Tools::getValue('link_' . (int) $val['id_lang']);
                     $labels[$val['id_lang']] = Tools::getValue('label_' . (int) $val['id_lang']);
                 }
@@ -324,7 +322,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                         $label[$lang['id_lang']] = Tools::getValue('label_' . (int) $lang['id_lang']);
                     }
 
-                    Ps_MenuTopLinks::update($link, $label, $new_window, (int) $id_shop, (int) $id_linksmenutop);
+                    Ps_MenuTopLinks::update($link, $label, $new_window, $id_shop, $id_linksmenutop);
                     $this->_html .= $this->displayConfirmation($this->trans('The link has been edited.', [], 'Modules.Mainmenu.Admin'));
                 }
                 $update_cache = true;
@@ -349,7 +347,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $this->_html .= $this->renderForm() . $this->renderAddForm();
 
         foreach ($shops as $shop_id) {
-            $links = array_merge($links, Ps_MenuTopLinks::gets((int) $id_lang, null, (int) $shop_id));
+            $links = array_merge($links, Ps_MenuTopLinks::gets($id_lang, null, (int) $shop_id));
         }
 
         if (!count($links)) {
@@ -392,27 +390,23 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $items = Tools::getValue('items');
         if (is_array($items) && count($items)) {
             return $items;
-        } else {
-            $shops = Shop::getContextListShopID();
-            $conf = null;
-
-            if (count($shops) > 1) {
-                foreach ($shops as $key => $shop_id) {
-                    $shop_group_id = Shop::getGroupFromShop($shop_id);
-                    $conf .= (string) ($key > 1 ? ',' : '') . Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
-                }
-            } else {
-                $shop_id = (int) $shops[0];
-                $shop_group_id = Shop::getGroupFromShop($shop_id);
-                $conf = Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
-            }
-
-            if (strlen($conf)) {
-                return explode(',', $conf);
-            } else {
-                return [];
-            }
         }
+        $shops = Shop::getContextListShopID();
+        $conf = null;
+        if (count($shops) > 1) {
+            foreach ($shops as $key => $shop_id) {
+                $shop_group_id = Shop::getGroupFromShop($shop_id);
+                $conf .= $key > 1 ? ',' : '' . Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
+            }
+        } else {
+            $shop_id = (int) $shops[0];
+            $shop_group_id = Shop::getGroupFromShop($shop_id);
+            $conf = Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
+        }
+        if (strlen($conf)) {
+            return explode(',', $conf);
+        }
+        return [];
     }
 
     protected function makeMenuOption()
@@ -433,28 +427,28 @@ class Ps_MainMenu extends Module implements WidgetInterface
 
             switch (substr($item, 0, strlen($values[1]))) {
                 case 'CAT':
-                    $category = new Category((int) $id, (int) $id_lang);
+                    $category = new Category($id, $id_lang);
                     if (Validate::isLoadedObject($category)) {
                         $html .= '<option selected="selected" value="CAT' . $id . '">' . $category->name . '</option>' . PHP_EOL;
                     }
                     break;
 
                 case 'PRD':
-                    $product = new Product((int) $id, true, (int) $id_lang);
+                    $product = new Product($id, true, $id_lang);
                     if (Validate::isLoadedObject($product)) {
                         $html .= '<option selected="selected" value="PRD' . $id . '">' . $product->name . '</option>' . PHP_EOL;
                     }
                     break;
 
                 case 'CMS':
-                    $cms = new CMS((int) $id, (int) $id_lang);
+                    $cms = new CMS($id, $id_lang);
                     if (Validate::isLoadedObject($cms)) {
                         $html .= '<option selected="selected" value="CMS' . $id . '">' . $cms->meta_title . '</option>' . PHP_EOL;
                     }
                     break;
 
                 case 'CMS_CAT':
-                    $category = new CMSCategory((int) $id, (int) $id_lang);
+                    $category = new CMSCategory($id, $id_lang);
                     if (Validate::isLoadedObject($category)) {
                         $html .= '<option selected="selected" value="CMS_CAT' . $id . '">' . $category->name . '</option>' . PHP_EOL;
                     }
@@ -466,7 +460,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'MAN':
-                    $manufacturer = new Manufacturer((int) $id, (int) $id_lang);
+                    $manufacturer = new Manufacturer($id, $id_lang);
                     if (Validate::isLoadedObject($manufacturer)) {
                         $html .= '<option selected="selected" value="MAN' . $id . '">' . $manufacturer->name . '</option>' . PHP_EOL;
                     }
@@ -478,14 +472,14 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'SUP':
-                    $supplier = new Supplier((int) $id, (int) $id_lang);
+                    $supplier = new Supplier($id, $id_lang);
                     if (Validate::isLoadedObject($supplier)) {
                         $html .= '<option selected="selected" value="SUP' . $id . '">' . $supplier->name . '</option>' . PHP_EOL;
                     }
                     break;
 
                 case 'LNK':
-                    $link = Ps_MenuTopLinks::get((int) $id, (int) $id_lang, (int) $id_shop);
+                    $link = Ps_MenuTopLinks::get($id, $id_lang, $id_shop);
                     if (count($link)) {
                         if (!isset($link[0]['label']) || ($link[0]['label'] == '')) {
                             $default_language = Configuration::get('PS_LANG_DEFAULT');
@@ -496,9 +490,9 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'SHOP':
-                    $shop = new Shop((int) $id);
+                    $shop = new Shop($id);
                     if (Validate::isLoadedObject($shop)) {
-                        $html .= '<option selected="selected" value="SHOP' . (int) $id . '">' . $shop->name . '</option>' . PHP_EOL;
+                        $html .= '<option selected="selected" value="SHOP' . $id . '">' . $shop->name . '</option>' . PHP_EOL;
                     }
                     break;
             }
@@ -529,11 +523,11 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $rawSubCategories = $this->getCMSCategories(false, $id_cms_category, $id_lang);
         $rawSubPages = $this->getCMSPages($id_cms_category);
 
-        $subCategories = array_map(function ($category) use ($id_lang) {
+        $subCategories = array_map(function (array $category) use ($id_lang) {
             return $this->generateCMSCategoriesMenu($category['id_cms_category'], $id_lang);
         }, $rawSubCategories);
 
-        $subPages = array_map(function ($page) use ($id_lang) {
+        $subPages = array_map(function (array $page) use ($id_lang) {
             return $this->makeNode([
                 'type' => 'cms-page',
                 'page_identifier' => 'cms-page-' . $page['id_cms'],
@@ -546,15 +540,13 @@ class Ps_MainMenu extends Module implements WidgetInterface
             ]);
         }, $rawSubPages);
 
-        $node = $this->makeNode([
+        return $this->makeNode([
             'type' => 'cms-category',
             'page_identifier' => 'cms-category-' . $id_cms_category,
             'label' => $category->name,
             'url' => $category->getLink(),
             'children' => array_merge($subCategories, $subPages),
         ]);
-
-        return $node;
     }
 
     protected function makeMenu()
@@ -586,7 +578,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'PRD':
-                    $product = new Product((int) $id, true, (int) $id_lang);
+                    $product = new Product($id, true, $id_lang);
                     if ($product->id) {
                         $root_node['children'][] = $this->makeNode([
                             'type' => 'product',
@@ -598,7 +590,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'CMS':
-                    $cms = CMS::getLinks((int) $id_lang, [$id]);
+                    $cms = CMS::getLinks($id_lang, [$id]);
                     if (count($cms)) {
                         $root_node['children'][] = $this->makeNode([
                             'type' => 'cms-page',
@@ -610,12 +602,12 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'CMS_CAT':
-                    $root_node['children'][] = $this->generateCMSCategoriesMenu((int) $id, (int) $id_lang);
+                    $root_node['children'][] = $this->generateCMSCategoriesMenu($id, $id_lang);
                     break;
 
                 // Case to handle the option to show all Manufacturers
                 case 'ALLMAN':
-                    $children = array_map(function ($manufacturer) use ($id_lang) {
+                    $children = array_map(function (array $manufacturer) use ($id_lang) {
                         return $this->makeNode([
                             'type' => 'manufacturer',
                             'page_identifier' => 'manufacturer-' . $manufacturer['id_manufacturer'],
@@ -655,7 +647,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
 
                 // Case to handle the option to show all Suppliers
                 case 'ALLSUP':
-                    $children = array_map(function ($supplier) use ($id_lang) {
+                    $children = array_map(function (array $supplier) use ($id_lang) {
                         return $this->makeNode([
                             'type' => 'supplier',
                             'page_identifier' => 'supplier-' . $supplier['id_supplier'],
@@ -694,7 +686,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                     break;
 
                 case 'SHOP':
-                    $shop = new Shop((int) $id);
+                    $shop = new Shop($id);
                     if (Validate::isLoadedObject($shop)) {
                         $root_node['children'][] = $this->makeNode([
                             'type' => 'shop',
@@ -723,7 +715,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
             }
         }
 
-        return $this->mapTree(function ($node, $depth) {
+        return $this->mapTree(function (array $node, $depth) {
             $node['depth'] = $depth;
 
             return $node;
@@ -732,7 +724,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
 
     protected function mapTree(callable $cb, array $node, $depth = 0)
     {
-        $node['children'] = array_map(function ($child) use ($cb, $depth) {
+        $node['children'] = array_map(function (array $child) use ($cb, $depth) {
             return $this->mapTree($cb, $child, $depth + 1);
         }, $node['children']);
 
@@ -743,7 +735,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
     {
         $html = '';
 
-        foreach ($categories as $key => $category) {
+        foreach ($categories as $category) {
             if (isset($items_to_skip) /*&& !in_array('CAT'.(int)$category['id_category'], $items_to_skip)*/) {
                 $shop = (object) Shop::getShop((int) $category['id_shop']);
                 $html .= '<option value="CAT' . (int) $category['id_category'] . '">'
@@ -762,7 +754,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
     {
         $nodes = [];
 
-        foreach ($categories as $key => $category) {
+        foreach ($categories as $category) {
             $node = $this->makeNode([]);
             if ($category['level_depth'] > 1) {
                 $cat = new Category($category['id_category']);
@@ -817,8 +809,8 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $html = '';
         $id_lang = $id_lang ? (int) $id_lang : (int) Context::getContext()->language->id;
         $id_shop = ($id_shop !== false) ? $id_shop : Context::getContext()->shop->id;
-        $categories = $this->getCMSCategories(false, (int) $parent, (int) $id_lang, (int) $id_shop);
-        $pages = $this->getCMSPages((int) $parent, (int) $id_shop, (int) $id_lang);
+        $categories = $this->getCMSCategories(false, (int) $parent, $id_lang, (int) $id_shop);
+        $pages = $this->getCMSPages((int) $parent, (int) $id_shop, $id_lang);
 
         $spacer = str_repeat('&nbsp;', $this->spacer_size * (int) $depth);
 
@@ -826,7 +818,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
             if (isset($items_to_skip) && !in_array('CMS_CAT' . $category['id_cms_category'], $items_to_skip)) {
                 $html .= '<option value="CMS_CAT' . $category['id_cms_category'] . '" style="font-weight: bold;">' . $spacer . $category['name'] . '</option>';
             }
-            $html .= $this->getCMSOptions($category['id_cms_category'], (int) $depth + 1, (int) $id_lang, $items_to_skip);
+            $html .= $this->getCMSOptions($category['id_cms_category'], (int) $depth + 1, $id_lang, $items_to_skip);
         }
 
         foreach ($pages as $page) {
@@ -862,32 +854,29 @@ class Ps_MainMenu extends Module implements WidgetInterface
                 $join_shop . '
 				INNER JOIN `' . _DB_PREFIX_ . 'cms_category_lang` cl
 				ON (bcp.`id_cms_category` = cl.`id_cms_category`)
-				WHERE cl.`id_lang` = ' . (int) $id_lang . '
+				WHERE cl.`id_lang` = ' . $id_lang . '
 				AND bcp.`id_parent` = ' . (int) $parent .
                 $where_shop;
 
             return Db::getInstance()->executeS($sql);
-        } else {
-            $sql = 'SELECT bcp.`id_cms_category`, bcp.`id_parent`, bcp.`level_depth`, bcp.`active`, bcp.`position`, cl.`name`, cl.`link_rewrite`
+        }
+        $sql = 'SELECT bcp.`id_cms_category`, bcp.`id_parent`, bcp.`level_depth`, bcp.`active`, bcp.`position`, cl.`name`, cl.`link_rewrite`
 				FROM `' . _DB_PREFIX_ . 'cms_category` bcp' .
-                $join_shop . '
+            $join_shop . '
 				INNER JOIN `' . _DB_PREFIX_ . 'cms_category_lang` cl
 				ON (bcp.`id_cms_category` = cl.`id_cms_category`)
-				WHERE cl.`id_lang` = ' . (int) $id_lang . '
+				WHERE cl.`id_lang` = ' . $id_lang . '
 				AND bcp.`id_parent` = ' . (int) $parent .
-                $where_shop;
-
-            $results = Db::getInstance()->executeS($sql);
-            foreach ($results as $result) {
-                $sub_categories = $this->getCMSCategories(true, $result['id_cms_category'], (int) $id_lang);
-                if ($sub_categories && count($sub_categories) > 0) {
-                    $result['sub_categories'] = $sub_categories;
-                }
-                $categories[] = $result;
+            $where_shop;
+        $results = Db::getInstance()->executeS($sql);
+        foreach ($results as $result) {
+            $sub_categories = $this->getCMSCategories(true, $result['id_cms_category'], $id_lang);
+            if ($sub_categories && count($sub_categories) > 0) {
+                $result['sub_categories'] = $sub_categories;
             }
-
-            return isset($categories) ? $categories : false;
+            $categories[] = $result;
         }
+        return isset($categories) ? $categories : false;
     }
 
     protected function getCMSPages($id_cms_category, $id_shop = false, $id_lang = false)
@@ -902,9 +891,9 @@ class Ps_MainMenu extends Module implements WidgetInterface
 			INNER JOIN `' . _DB_PREFIX_ . 'cms_lang` cl
 			ON (c.`id_cms` = cl.`id_cms`)
 			WHERE c.`id_cms_category` = ' . (int) $id_cms_category . '
-			AND cs.`id_shop` = ' . (int) $id_shop . '
-			AND cl.`id_lang` = ' . (int) $id_lang . '
-			AND cl.`id_shop` = ' . (int) $id_shop . '
+			AND cs.`id_shop` = ' . $id_shop . '
+			AND cl.`id_lang` = ' . $id_lang . '
+			AND cl.`id_shop` = ' . $id_shop . '
 			AND c.`active` = 1
 			ORDER BY `position`';
 
@@ -1052,7 +1041,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
             $linksmenutop[$id]['new_id_linksmenutop'] = Db::getInstance()->Insert_ID();
         }
 
-        foreach ($linksmenutop as $id => $link) {
+        foreach ($linksmenutop as $link) {
             $lang = Db::getInstance()->executeS('
 					SELECT id_lang, ' . (int) $params['new_id_shop'] . ', label, link
 					FROM ' . _DB_PREFIX_ . 'linksmenutop_lang
@@ -1113,7 +1102,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $helper->table = $this->table;
         $lang = new Language((int) Configuration::get('PS_LANG_DEFAULT'));
         $helper->default_form_language = $lang->id;
-        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ? Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') : 0;
+        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ?: 0;
         $helper->module = $this;
         $helper->identifier = $this->identifier;
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false, [], ['configure' => $this->name, 'tab_module' => $this->tab, 'module_name' => $this->name]);
@@ -1182,7 +1171,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $helper->table = $this->table;
         $lang = new Language((int) Configuration::get('PS_LANG_DEFAULT'));
         $helper->default_form_language = $lang->id;
-        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ? Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') : 0;
+        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ?: 0;
         $helper->identifier = $this->identifier;
         $helper->fields_value = $this->getAddLinkFieldsValues();
 
@@ -1289,9 +1278,8 @@ class Ps_MainMenu extends Module implements WidgetInterface
             }
         }
         $html .= '</optgroup>';
-        $html .= '</select>';
 
-        return $html;
+        return $html . '</select>';
     }
 
     public function customGetNestedCategories($shop_id, $root_category = null, $id_lang = false, $active = false, $groups = null, $use_shop_restriction = true, $sql_filter = '', $sql_sort = '', $sql_limit = '')
@@ -1440,30 +1428,36 @@ class Ps_MainMenu extends Module implements WidgetInterface
         $controllerName = Dispatcher::getInstance()->getController();
         if ($controllerName === 'cms' && ($id = Tools::getValue('id_cms'))) {
             return 'cms-page-' . $id;
-        } elseif ($controllerName === 'category' && ($id = Tools::getValue('id_category'))) {
-            return 'category-' . $id;
-        } elseif ($controllerName === 'cms' && ($id = Tools::getValue('id_cms_category'))) {
-            return 'cms-category-' . $id;
-        } elseif ($controllerName === 'manufacturer' && ($id = Tools::getValue('id_manufacturer'))) {
-            return 'manufacturer-' . $id;
-        } elseif ($controllerName === 'manufacturer') {
-            return 'manufacturers';
-        } elseif ($controllerName === 'supplier' && ($id = Tools::getValue('id_supplier'))) {
-            return 'supplier-' . $id;
-        } elseif ($controllerName === 'supplier') {
-            return 'suppliers';
-        } elseif ($controllerName === 'product' && ($id = Tools::getValue('id_product'))) {
-            return 'product-' . $id;
-        } elseif ($controllerName === 'index') {
-            return 'shop-' . $this->context->shop->id;
-        } else {
-            $scheme = 'http';
-            if (array_key_exists('REQUEST_SCHEME', $_SERVER)) {
-                $scheme = $_SERVER['REQUEST_SCHEME'];
-            }
-
-            return "$scheme://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         }
+        if ($controllerName === 'category' && ($id = Tools::getValue('id_category'))) {
+            return 'category-' . $id;
+        }
+        if ($controllerName === 'cms' && ($id = Tools::getValue('id_cms_category'))) {
+            return 'cms-category-' . $id;
+        }
+        if ($controllerName === 'manufacturer' && ($id = Tools::getValue('id_manufacturer'))) {
+            return 'manufacturer-' . $id;
+        }
+        if ($controllerName === 'manufacturer') {
+            return 'manufacturers';
+        }
+        if ($controllerName === 'supplier' && ($id = Tools::getValue('id_supplier'))) {
+            return 'supplier-' . $id;
+        }
+        if ($controllerName === 'supplier') {
+            return 'suppliers';
+        }
+        if ($controllerName === 'product' && ($id = Tools::getValue('id_product'))) {
+            return 'product-' . $id;
+        }
+        if ($controllerName === 'index') {
+            return 'shop-' . $this->context->shop->id;
+        }
+        $scheme = 'http';
+        if (array_key_exists('REQUEST_SCHEME', $_SERVER)) {
+            $scheme = $_SERVER['REQUEST_SCHEME'];
+        }
+        return "$scheme://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
     }
 
     public function getWidgetVariables($hookName, array $configuration)
