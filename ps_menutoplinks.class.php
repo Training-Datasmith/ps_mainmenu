@@ -89,6 +89,10 @@ class Ps_MenuTopLinks
         $result = true;
 
         foreach ($label as $id_lang => $label) {
+            $linkValue = $link[$id_lang] ?? '';
+            if (!self::isAllowedUrl($linkValue)) {
+                continue;
+            }
             $result &= Db::getInstance()->insert(
                 'linksmenutop_lang',
                 [
@@ -96,7 +100,7 @@ class Ps_MenuTopLinks
                     'id_lang' => (int) $id_lang,
                     'id_shop' => (int) $id_shop,
                     'label' => pSQL($label),
-                    'link' => pSQL($link[$id_lang]),
+                    'link' => pSQL($linkValue),
                 ]
             );
         }
@@ -123,12 +127,16 @@ class Ps_MenuTopLinks
         );
 
         foreach ($labels as $id_lang => $label) {
+            $linkValue = $link[$id_lang] ?? '';
+            if (!self::isAllowedUrl($linkValue)) {
+                continue;
+            }
             Db::getInstance()->update(
                 'linksmenutop_lang',
                 [
                     'id_shop' => (int) $id_shop,
                     'label' => pSQL($label),
-                    'link' => pSQL($link[$id_lang]),
+                    'link' => pSQL($linkValue),
                 ],
                 'id_linksmenutop = ' . (int) $id_link . ' AND id_lang = ' . (int) $id_lang
             );
@@ -141,5 +149,18 @@ class Ps_MenuTopLinks
         $result &= Db::getInstance()->delete('linksmenutop', 'id_linksmenutop = ' . (int) $id_linksmenutop . ' AND id_shop = ' . (int) $id_shop);
 
         return $result & Db::getInstance()->delete('linksmenutop_lang', 'id_linksmenutop = ' . (int) $id_linksmenutop);
+    }
+
+    /**
+     * Returns true if the URL uses an allowed scheme (http or https) or is empty.
+     * Prevents javascript: and other dangerous URI schemes from being stored.
+     */
+    private static function isAllowedUrl(string $url): bool
+    {
+        if ($url === '') {
+            return true;
+        }
+
+        return (bool) preg_match('#^https?://#i', $url);
     }
 }
