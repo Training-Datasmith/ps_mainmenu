@@ -3,12 +3,27 @@
 error_reporting(-1);
 ini_set('display_errors', '1');
 
+if (!getenv('PS_MAINMENU_RUN_PROOFS')) {
+    fwrite(STDERR, "prove-fixes is opt-in: set PS_MAINMENU_RUN_PROOFS=1\n");
+    exit(0);
+}
+
+if (!defined('_DB_PREFIX_')) {
+    define('_DB_PREFIX_', 'ps_');
+}
+
 $repo = dirname(dirname(__DIR__));
 $mutations = array(
     array(
         'file' => $repo . '/ps_mainmenu.php',
-        'from' => "' . pSQL(\$l['label']) . ', ' . pSQL(\$l['link']) . '",
-        'to' => "(int) \$l['label'] . ', ' . (int) \$l['link']",
+        'from' => <<<'NEEDLE'
+, \'' . pSQL($l['label']) . '\', \'' . pSQL($l['link']) . '\' )
+NEEDLE
+,
+        'to' => <<<'NEEDLE'
+, (int) $l['label'] . ', ' . (int) $l['link'] . ' )
+NEEDLE
+,
         'test' => 'testShopDuplicationPreservesLabelsLinksAndNewWindow',
         'class' => 'MenuTopLinksTest',
     ),
@@ -21,7 +36,10 @@ $mutations = array(
     ),
     array(
         'file' => $repo . '/ps_mainmenu.php',
-        'from' => 'LEFT JOIN `' . _DB_PREFIX_ . 'category_group` cg ON c.`id_category` = cg.`id_category`',
+        'from' => <<<'NEEDLE'
+LEFT JOIN `' . _DB_PREFIX_ . 'category_group` cg ON c.`id_category` = cg.`id_category`
+NEEDLE
+,
         'to' => '',
         'test' => 'testCustomNestedCategoriesFilterByCustomerGroup',
         'class' => 'NestedCatalogTest',
@@ -47,6 +65,10 @@ foreach ($mutations as $mutation) {
         escapeshellarg($mutation['class']) . ' ' . escapeshellarg($mutation['test']);
     exec($cmd, $output, $code);
     file_put_contents($mutation['file'], $backup);
+    if ($code === 127) {
+        fwrite(STDERR, "Runner missing for {$mutation['test']} (exit 127)\n");
+        exit(1);
+    }
     if ($code === 0) {
         fwrite(STDERR, "Expected failure for {$mutation['test']} but test passed\n");
         exit(1);

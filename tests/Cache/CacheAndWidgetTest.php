@@ -95,7 +95,7 @@ class CacheAndWidgetTest extends PsMainmenuIntegrationTestCase
         Hook::addListener('actionMainMenuModifier', function ($params) {
             $params['menu']['children'][0]['label'] = 'Hooked';
         });
-        $html = $this->module->renderWidgetWithSmarty('displayTop', array());
+        $html = $this->module->renderWidget('displayTop', array());
         $this->assertContains('Hooked', $html);
         $this->assertNotContains('Before', $html);
     }

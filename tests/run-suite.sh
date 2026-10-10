@@ -33,7 +33,8 @@ ${DOCKER} run -d --name ps-mainmenu-mariadb \
   -e MYSQL_ROOT_PASSWORD=root_test \
   "${MARIADB_IMAGE}" \
   --character-set-server=utf8mb4 \
-  --collation-server=utf8mb4_general_ci
+  --collation-server=utf8mb4_general_ci \
+  --bind-address=127.0.0.1
 
 for _ in $(seq 1 60); do
   if ${DOCKER} exec ps-mainmenu-mariadb mysqladmin ping -uroot -proot_test --silent; then

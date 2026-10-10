@@ -61,15 +61,25 @@ class NestedCatalogTest extends PsMainmenuIntegrationTestCase
     public function testCustomNestedCategoriesExitOnInvalidArguments()
     {
         $repo = dirname(dirname(__DIR__));
+        $marker = tempnam(sys_get_temp_dir(), 'psmm_nested_marker_');
+        putenv('PS_MAINMENU_MARKER_FILE=' . $marker);
         foreach (array('abc', 'nope') as $i => $arg) {
             $script = tempnam(sys_get_temp_dir(), 'psmm_inv_');
             $content = $i === 0
                 ? '<?php if (!defined("_PS_VERSION_")) { define("_PS_VERSION_","1.7.8.7"); } require "' . $repo . '/tests/bootstrap.php"; $m=new PsMainMenuHarness(); $m->customGetNestedCategories(1,"abc",1,false);'
                 : '<?php if (!defined("_PS_VERSION_")) { define("_PS_VERSION_","1.7.8.7"); } require "' . $repo . '/tests/bootstrap.php"; $m=new PsMainMenuHarness(); $m->customGetNestedCategories(1,null,1,"nope");';
             file_put_contents($script, $content);
+            if (file_exists($marker)) {
+                unlink($marker);
+            }
             $result = PsMainmenuDirectAccessRunner::run($script);
             PsMainmenuDirectAccessRunner::assertCleanChildOutput($result);
+            $this->assertFalse(file_exists($marker));
             unlink($script);
+        }
+        putenv('PS_MAINMENU_MARKER_FILE');
+        if (file_exists($marker)) {
+            unlink($marker);
         }
     }
 

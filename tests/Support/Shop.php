@@ -90,8 +90,13 @@ class Shop
 
     public static function getShops($active = true, $idShopGroup = null, $getAsListId = false)
     {
+        $shops = self::$shops;
+        uasort($shops, function ($a, $b) {
+            return strcmp($a['name'], $b['name']);
+        });
+
         $results = array();
-        foreach (self::$shops as $id => $shop) {
+        foreach ($shops as $id => $shop) {
             if ($active && !$shop['active']) {
                 continue;
             }

@@ -20,10 +20,20 @@ class UpgradeScriptTest extends PsMainmenuIntegrationTestCase
             $repo . '/upgrade/upgrade-2.3.2.php',
             $repo . '/upgrade/upgrade-2.3.5.php',
         );
+        $marker = tempnam(sys_get_temp_dir(), 'psmm_upgrade_marker_');
+        putenv('PS_MAINMENU_MARKER_FILE=' . $marker);
         foreach ($targets as $target) {
+            if (file_exists($marker)) {
+                unlink($marker);
+            }
             $result = PsMainmenuDirectAccessRunner::run($target);
             PsMainmenuDirectAccessRunner::assertCleanChildOutput($result);
             $this->assertNotContains('Ps_MainMenu', $result['stdout']);
+            $this->assertFalse(file_exists($marker));
+        }
+        putenv('PS_MAINMENU_MARKER_FILE');
+        if (file_exists($marker)) {
+            unlink($marker);
         }
     }
 

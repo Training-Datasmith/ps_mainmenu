@@ -113,6 +113,10 @@ class Module
 
     public function fetch($template)
     {
+        if (isset($this->smarty->vars['menu']) && is_array($this->smarty->vars['menu'])) {
+            return PsMainmenuSmartyRenderer::render($this->smarty->vars['menu']);
+        }
+
         return '';
     }
 

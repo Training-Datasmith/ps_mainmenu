@@ -404,10 +404,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
                 $parts = [];
                 foreach ($shops as $shop_id) {
                     $shop_group_id = Shop::getGroupFromShop($shop_id);
-                    $value = (string) Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
-                    if ($value !== '') {
-                        $parts[] = $value;
-                    }
+                    $parts[] = (string) Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
                 }
                 $conf = implode(',', $parts);
             } else {
