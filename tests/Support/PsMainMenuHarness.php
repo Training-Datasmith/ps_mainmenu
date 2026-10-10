@@ -57,14 +57,6 @@ class PsMainMenuHarness extends Ps_MainMenu
         $this->page_name = $name;
     }
 
-    public function renderWidgetWithSmarty($hookName, array $configuration)
-    {
-        $menu = $this->getWidgetVariables($hookName, $configuration);
-        Hook::exec('actionMainMenuModifier', array('menu' => &$menu));
-
-        return PsMainmenuSmartyRenderer::render($menu);
-    }
-
     public function exposeClearMenuCache()
     {
         $this->clearMenuCache();

@@ -12,8 +12,12 @@ class MenuTopLinksTest extends PsMainmenuIntegrationTestCase
     {
         $this->assertFalse(Ps_MenuTopLinks::add('x', array(1 => 'a'), 0, 1));
         $this->assertFalse(Ps_MenuTopLinks::add(array(1 => 'a'), 'x', 0, 1));
-        $rows = Db::getInstance()->executeS('SELECT * FROM `' . _DB_PREFIX_ . 'linksmenutop_lang` WHERE label = "Café"');
-        $this->assertSame(array(), $rows);
+        $this->assertSame(0, (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'linksmenutop`'
+        ));
+        $this->assertSame(0, (int) Db::getInstance()->getValue(
+            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'linksmenutop_lang`'
+        ));
     }
 
     public function testAddGetsRoundTripIncludingMultibyteLabel()
@@ -118,7 +122,7 @@ class MenuTopLinksTest extends PsMainmenuIntegrationTestCase
             'SELECT link FROM `' . _DB_PREFIX_ . 'linksmenutop_lang`
             WHERE id_linksmenutop = ' . $newId . ' AND id_lang = 1 AND id_shop = 2'
         );
-        $this->assertContains('Reilly', $label);
+        $this->assertSame("O'Reilly", $label);
         $this->assertSame('https://example.test/summer', $link);
         $this->assertSame(1, (int) Db::getInstance()->getValue(
             'SELECT new_window FROM `' . _DB_PREFIX_ . 'linksmenutop` WHERE id_shop = 2'

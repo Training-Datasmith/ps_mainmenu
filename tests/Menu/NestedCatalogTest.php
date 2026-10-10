@@ -22,6 +22,7 @@ class NestedCatalogTest extends PsMainmenuIntegrationTestCase
     {
         $this->seedCategory(10, 0, 1, 1, 'Cached', 1);
         $first = $this->module->customGetNestedCategories(1, null, 1, false);
+        $this->assertArrayHasKey(10, $first);
         Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'category` WHERE id_category = 10');
         $second = $this->module->customGetNestedCategories(1, null, 1, false);
         $this->assertSame($first, $second);
@@ -52,6 +53,8 @@ class NestedCatalogTest extends PsMainmenuIntegrationTestCase
         $only3 = $this->module->customGetNestedCategories(1, null, 1, false, array(3));
         $this->assertArrayHasKey(10, $only3);
         $this->assertArrayNotHasKey(11, $only3);
+        $sanitized = $this->module->customGetNestedCategories(1, null, 1, false, array('3) OR (1=1'));
+        $this->assertArrayNotHasKey(11, $sanitized);
         Group::setFeatureActive(false);
         $both = $this->module->customGetNestedCategories(1, null, 1, false, array(3));
         $this->assertArrayHasKey(10, $both);

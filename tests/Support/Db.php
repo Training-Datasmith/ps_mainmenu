@@ -113,7 +113,8 @@ class Db
                 if ($firstRow) {
                     $keys[] = '`' . $key . '`';
                 }
-                $values[] = "'" . $this->escape($value) . "'";
+                // PrestaShop Db::insert() does not escape; callers must pSQL() strings first.
+                $values[] = "'" . $value . "'";
             }
             $firstRow = false;
             $valuesStringified[] = '(' . implode(', ', $values) . ')';
@@ -131,7 +132,8 @@ class Db
         }
         $sets = array();
         foreach ($data as $key => $value) {
-            $sets[] = '`' . $key . "` = '" . $this->escape($value) . "'";
+            // PrestaShop Db::update() does not escape; callers must pSQL() strings first.
+            $sets[] = '`' . $key . "` = '" . $value . "'";
         }
         $sql = 'UPDATE `' . $table . '` SET ' . implode(', ', $sets);
         if ($where) {
