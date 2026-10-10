@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="bootstrap.php"
+         colors="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true">
+    <testsuites>
+        <testsuite name="module-tests">
+            <file>Guard/SuiteManifestTest.php</file>
+            <file>Guard/DirectoryGuardTest.php</file>
+            <file>Install/InstallResetTest.php</file>
+            <file>Links/MenuTopLinksTest.php</file>
+            <file>Menu/MenuBuilderTest.php</file>
+            <file>Menu/NestedCatalogTest.php</file>
+            <file>Cache/CacheAndWidgetTest.php</file>
+            <file>Content/GetContentTest.php</file>
+            <file>Template/FrontTemplateTest.php</file>
+            <file>Upgrade/UpgradeScriptTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

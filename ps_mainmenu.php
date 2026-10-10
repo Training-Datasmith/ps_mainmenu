@@ -295,7 +295,11 @@ class Ps_MainMenu extends Module implements WidgetInterface
 
                 foreach ($shops as $shop_id) {
                     $deleted = Ps_MenuTopLinks::remove($id_linksmenutop, (int) $shop_id);
-                    Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', str_replace(['LNK' . $id_linksmenutop . ',', 'LNK' . $id_linksmenutop], '', Configuration::get('MOD_BLOCKTOPMENU_ITEMS')));
+                    $currentItems = Configuration::get('MOD_BLOCKTOPMENU_ITEMS');
+                    $tokens = array_filter(explode(',', $currentItems), function ($token) use ($id_linksmenutop) {
+                        return $token !== 'LNK' . (int) $id_linksmenutop;
+                    });
+                    Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', implode(',', $tokens));
 
                     if (!$deleted) {
                         $shop = new Shop($shop_id);
@@ -397,10 +401,15 @@ class Ps_MainMenu extends Module implements WidgetInterface
             $conf = null;
 
             if (count($shops) > 1) {
-                foreach ($shops as $key => $shop_id) {
+                $parts = [];
+                foreach ($shops as $shop_id) {
                     $shop_group_id = Shop::getGroupFromShop($shop_id);
-                    $conf .= (string) ($key > 1 ? ',' : '') . Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
+                    $value = (string) Configuration::get('MOD_BLOCKTOPMENU_ITEMS', null, $shop_group_id, $shop_id);
+                    if ($value !== '') {
+                        $parts[] = $value;
+                    }
                 }
+                $conf = implode(',', $parts);
             } else {
                 $shop_id = (int) $shops[0];
                 $shop_group_id = Shop::getGroupFromShop($shop_id);
@@ -1061,7 +1070,7 @@ class Ps_MainMenu extends Module implements WidgetInterface
             foreach ($lang as $l) {
                 Db::getInstance()->execute('
 					INSERT IGNORE INTO ' . _DB_PREFIX_ . 'linksmenutop_lang (id_linksmenutop, id_lang, id_shop, label, link)
-					VALUES (' . (int) $link['new_id_linksmenutop'] . ', ' . (int) $l['id_lang'] . ', ' . (int) $params['new_id_shop'] . ', ' . (int) $l['label'] . ', ' . (int) $l['link'] . ' )');
+					VALUES (' . (int) $link['new_id_linksmenutop'] . ', ' . (int) $l['id_lang'] . ', ' . (int) $params['new_id_shop'] . ', \'' . pSQL($l['label']) . '\', \'' . pSQL($l['link']) . '\' )');
             }
         }
     }
@@ -1317,9 +1326,10 @@ class Ps_MainMenu extends Module implements WidgetInterface
 				FROM `' . _DB_PREFIX_ . 'category` c
 				INNER JOIN `' . _DB_PREFIX_ . 'category_shop` category_shop ON (category_shop.`id_category` = c.`id_category` AND category_shop.`id_shop` = "' . (int) $shop_id . '")
 				LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl ON (c.`id_category` = cl.`id_category` AND cl.`id_shop` = "' . (int) $shop_id . '")
+				' . (isset($groups) && Group::isFeatureActive() ? 'LEFT JOIN `' . _DB_PREFIX_ . 'category_group` cg ON c.`id_category` = cg.`id_category`' : '') . '
 				WHERE 1 ' . $sql_filter . ' ' . ($id_lang ? 'AND cl.`id_lang` = ' . (int) $id_lang : '') . '
 				' . ($active ? ' AND (c.`active` = 1 OR c.`is_root_category` = 1)' : '') . '
-				' . (isset($groups) && Group::isFeatureActive() ? ' AND cg.`id_group` IN (' . implode(',', $groups) . ')' : '') . '
+				' . (isset($groups) && Group::isFeatureActive() ? ' AND cg.`id_group` IN (' . implode(',', array_map('intval', $groups)) . ')' : '') . '
 				' . (!$id_lang || (isset($groups) && Group::isFeatureActive()) ? ' GROUP BY c.`id_category`' : '') . '
 				' . ($sql_sort != '' ? $sql_sort : ' ORDER BY c.`level_depth` ASC') . '
 				' . ($sql_sort == '' && $use_shop_restriction ? ', category_shop.`position` ASC' : '') . '
