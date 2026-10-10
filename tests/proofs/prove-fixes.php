@@ -8,10 +8,6 @@ if (!getenv('PS_MAINMENU_RUN_PROOFS')) {
     exit(0);
 }
 
-if (!defined('_DB_PREFIX_')) {
-    define('_DB_PREFIX_', 'ps_');
-}
-
 $repo = dirname(dirname(__DIR__));
 $mutations = array(
     array(
